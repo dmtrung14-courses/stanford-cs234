@@ -23,10 +23,8 @@ def bellman_backup(state, action, R, T, gamma, V):
     backup_val: float
     """
     backup_val = 0.
-    ############################
-    # YOUR IMPLEMENTATION HERE #
 
-    ############################
+    backup_val = R[state, action] + gamma * np.sum(T[state, action] * V)
 
     return backup_val
 
@@ -48,10 +46,14 @@ def policy_evaluation(policy, R, T, gamma, tol=1e-3):
     num_states, num_actions = R.shape
     value_function = np.zeros(num_states)
 
-    ############################
-    # YOUR IMPLEMENTATION HERE #
+    while True:
+        prev_val_func = np.copy(value_function)
+        for state in range(num_states):
+            value_function[state] = bellman_backup(state, policy[state], R, T, gamma, prev_val_func)
+        if np.linalg.norm(value_function - prev_val_func) < tol:
+            break
+    
 
-    ############################
     return value_function
 
 
@@ -73,10 +75,8 @@ def policy_improvement(policy, R, T, V_policy, gamma):
     num_states, num_actions = R.shape
     new_policy = np.zeros(num_states, dtype=int)
 
-    ############################
-    # YOUR IMPLEMENTATION HERE #
+    new_policy = np.argmax(R + gamma * np.sum(T * V_policy, axis=2), axis=1)
 
-    ############################
     return new_policy
 
 
@@ -98,10 +98,22 @@ def policy_iteration(R, T, gamma, tol=1e-3):
     num_states, num_actions = R.shape
     V_policy = np.zeros(num_states)
     policy = np.zeros(num_states, dtype=int)
-    ############################
-    # YOUR IMPLEMENTATION HERE #
+    
+    policy = np.random.randint(0, num_actions, num_states)
+    V_policy = policy_evaluation(policy, R, T, gamma, tol)
+    policy_stable = False
+    iteration = 0
+    while not policy_stable:
+        print(f'Policy Iteration: {iteration}')
+        V_policy = policy_evaluation(policy, R, T, gamma, tol)
+        new_policy = policy_improvement(policy, R, T, V_policy, gamma)
+        if np.linalg.norm(new_policy - policy) <= tol:
+            policy_stable = True
+        print(policy, new_policy)
+        policy = new_policy
+        
+        iteration += 1
 
-    ############################
     return V_policy, policy
 
 
@@ -120,10 +132,18 @@ def value_iteration(R, T, gamma, tol=1e-3):
     num_states, num_actions = R.shape
     value_function = np.zeros(num_states)
     policy = np.zeros(num_states, dtype=int)
-    ############################
-    # YOUR IMPLEMENTATION HERE #
+    
+    value_function = np.zeros(num_states)
+    policy = np.zeros(num_states, dtype=int)
+    delta = np.inf
+    while delta > tol:
+        delta = 0
+        for state in range(num_states):
+            v = value_function[state]
+            value_function[state] = np.max(R[state] + gamma * np.sum(T[state] * value_function, axis=1))
+            delta = max(delta, np.abs(v - value_function[state]))
+        policy = np.argmax(R + gamma * np.sum(T * value_function, axis=2), axis=1)
 
-    ############################
     return value_function, policy
 
 
